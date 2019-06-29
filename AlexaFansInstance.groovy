@@ -27,14 +27,14 @@ definition(
     iconX2Url: "http://cdn.device-icons.smartthings.com/Appliances/appliances11-icn@2x.png",
     iconX3Url: "http://cdn.device-icons.smartthings.com/Appliances/appliances11-icn@2x.png")
 
-def fanName = [
+def fanNameInput = [
 	name:				"fanName",
 	type:				"string",
 	title:				"This is the Name that you will command Alexa to change",
 	defaultValue:		null,
 	required:			true
 ]
-def wrappedFan = [
+def wrappedFanInput = [
 	name:				"wrappedFan",
 	type:				"capability.fanControl",
 	title:				"Wrapped Fan",
@@ -43,23 +43,59 @@ def wrappedFan = [
 	required:			true
 ]
 
-def fanSpeedCount = [
+def fanSpeedCountInput = [
 	name:				"fanSpeedCount",
 	type:				"enum",
 	title:				"How many speeds does your fan have?",
 	options:			[ "3", "5" ],
 	defaultValue:		"3",
-	required:			true
+	required:			true,
+	submitOnChange: 	true
 ]
 
-def hasScenes = [
+def hasScenesInput = [
 	name:				"hasScenes",
 	type:				"bool",
 	title:				"Create Virtual devices to act as Medium, medium high and such, when interfacing with alexa?",
 	defaultValue:		true,
 	required:			true
 ]
-def enableDebugLogging = [
+def lowfanSpeedInput = [
+	name:				"lowfanSpeed",
+	type:				"Integer",
+	title:				"The percentage to set the level for low ",
+	defaultValue:		10,
+	required:			true
+]
+def mediumLowfanSpeedInput = [
+	name:				"mediumLowfanSpeed",
+	type:				"Integer",
+	title:				"The percentage to set the level for medium-low (ignore if you only have 3 speeds)",
+	defaultValue:		30,
+	required:			true
+]
+def mediumfanSpeedInput = [
+	name:				"mediumfanSpeed",
+	type:				"Integer",
+	title:				"The percentage to set the level for medium",
+	defaultValue:		50,
+	required:			true
+]
+def mediumHighfanSpeedInput = [
+	name:				"mediumHighfanSpeed",
+	type:				"Integer",
+	title:				"The percentage to set the level for medium-high (ignore if you only have 3 speeds)",
+	defaultValue:		70,
+	required:			true
+]
+def highfanSpeedInput = [
+	name:				"highfanSpeed",
+	type:				"Integer",
+	title:				"The percentage to set the level for low ",
+	defaultValue:		90,
+	required:			true
+]
+def enableDebugLoggingInput = [
 	type: 				"bool",
 	name: 				"enableDebugLogging",
 	title: 				"Enable Debug Logging?",
@@ -68,22 +104,36 @@ def enableDebugLogging = [
 ]
 
 preferences {
-	page(name: "mainPage", title: "", install: true, uninstall: true) {
+ 	page(name: "mainPage", title: "", install: true, uninstall: true) {
 		section(getFormattedTitle("Alexa Fan Instance")) {
 		}
 		section("") {
-			input fanName
-			input wrappedFan
-			input fanSpeedCount
-			input hasScenes
-			input enableDebugLogging
+			input fanNameInput
+			input wrappedFanInput
+			input hasScenesInput
+			input fanSpeedCountInput
+			paragraph "below are the levels for the virtual wrapper dimmer switch to translate to the real fan and to be set with the medium Switches"
+			input lowfanSpeedInput
+			input mediumLowfanSpeedInput
+			input mediumfanSpeedInput
+			input mediumHighfanSpeedInput
+			input highfanSpeedInput
+			input enableDebugLoggingInput
 		}
 	}
 }
+ 
+
+
 def String mediumName(){ return "${fanName} Medium" }
 def String mediumHighName(){ return "${fanName} Medium High" }
 def String mediumLowName(){ return  "${fanName} Medium Low" }
 def String[] getSpeeds(){return ["off","low","medium-low","medium","medium-high","high"  ]}
+def Integer getLowfanSpeed(){	return lowfanSpeed.toInteger() }
+def Integer getMediumLowfanSpeed(){	return mediumLowfanSpeed.toInteger() }
+def Integer getMediumfanSpeed(){	return mediumfanSpeed.toInteger() }
+def Integer getMediumHighfanSpeed(){	return mediumHighfanSpeed.toInteger() }
+def Integer getHighfanSpeed(){	return highfanSpeed.toInteger() }
 def Integer getFanSpeedCount(){	return fanSpeedCount.toInteger() }
 
 def installed() {
@@ -106,9 +156,9 @@ def updated() {
 }
 def initialize() {
 	// Generate a label for this child app
-	app.updateLabel("Alexa ${fanName}")
+	app.updateLabel("Alexa Fans: ${fanName}")
 
-	def wrapper = getVirtual(fanName)
+	def wrapper = getVirtual(fanName);
 	subscribe(wrapper, "level", alexaFanLevelHandler)
 	subscribe(wrapper, "switch", alexaFanSwitchHandler)
 	subscribe(wrappedFan, "level", wrappedFanoffHandler)
@@ -210,31 +260,51 @@ def removeVirtual(String name)
 	}
 	
 }
- 
+
 def wrappedFanoffHandler(evt){
-	//turn them off always so they are ready to be turned back on. 
-	turnoffSpeed(mediumName())
+
+	def isOff = wrappedFan.currentValue("switch") == "off";
+	def isMedium = wrappedFan.currentValue("speed") == "medium";
+	if(isOff || !isMedium)	{
+		turnoffSpeed(mediumName())
+	}
 	if(getFanSpeedCount() == 5)
 	{
-		turnoffSpeed(mediumLowName())
-		turnoffSpeed(mediumHighName())
+		def isMediumLow = wrappedFan.currentValue("speed") == "medium-low";
+		def isMediumHigh = wrappedFan.currentValue("speed") == "medium-high";
+		if(isOff || !isMediumLow)	{
+			turnoffSpeed(mediumLowName())
+		}
+		if(isOff || !isMediumHigh){
+			turnoffSpeed(mediumHighName())
+		}
 	}
 }
 def turnoffSpeed(String speedName){
 	log "${speedName} off"
-	def speedSwitch = getVirtual(speedName)
+	def speedSwitch = getVirtual(speedName);
 	speedSwitch.off()
+}
+
+def alexaFanMediumHighHandler(evt) {
+	log "${wrappedFan.displayName} Medium High Activated"
+	def wrapper = getVirtual(fanName);
+	def mediumHigh = getMediumHighfanSpeed();
+	wrapper.setLevel(mediumHigh);
+	setFan(4)
 }
 def alexaFanMediumHandler(evt) {
 	log "${wrappedFan.displayName} Medium Activated"
+	def wrapper = getVirtual(fanName);
+	def medium = getMediumfanSpeed();
+	wrapper.setLevel(medium);
 	setFan(3)
-}
-def alexaFanMediumHighHandler(evt) {
-	log "${wrappedFan.displayName} Medium High Activated"
-	setFan(4)
 }
 def alexaFanMediumLowHandler(evt) {
 	log "${wrappedFan.displayName} Medium Low Activated"
+	def wrapper = getVirtual(fanName);
+	def mediumLow = getMediumLowfanSpeed();
+	wrapper.setLevel(mediumLow);
 	setFan(2)
 }
 
@@ -257,10 +327,11 @@ def handleLevel(Integer level)
 {
 	if(getFanSpeedCount() == 3)
 	{
-		if(level<50){
+		def medium = getMediumfanSpeed();
+		if(level<medium){
 			setFan(1)
 		}
-		else if(level>50){
+		else if(level>medium){
 			setFan(5)
 		}
 		else {
@@ -269,16 +340,22 @@ def handleLevel(Integer level)
 	}
 	else
 	{
-		if(level<=25){
+		def low = getLowfanSpeed();
+	//	def mediumLow= getMediumLowfanSpeed();
+		def medium= getMediumfanSpeed();
+	//	def mediumHigh=getMediumHighfanSpeed();
+		def high=getHighfanSpeed();
+
+		if(level<=low){
 			setFan(1)
 		}
-		else if(level>=75){
+		else if(level>=high){
 			setFan(5)
 		}
-		else if(level<50){
+		else if(level<medium){
 			setFan(2)
 		}
-		else if(level>50){
+		else if(level>medium){
 			setFan(4)
 		}
 		else {

@@ -28,3 +28,7 @@ Step 7: Create Alexa routines for each of the Medium Virtual Switches to call th
 
 Note: “Set [Fan Name Here] Medium” will not work :\
 
+# CHANGES
+1.1:
+Added more Robust events making the medium settings change based on state instead of every time something happens.
+Made it so whent he medium setting are turned on it updates the virtual switch. 

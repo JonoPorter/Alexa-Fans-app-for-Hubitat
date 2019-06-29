@@ -75,7 +75,7 @@ def  String getFormattedTitle(String myText){
 def footer(){
 	section() {
 		paragraph getFormattedLine()
-		paragraph "<div style='color:#1A77C9;text-align:center'>Alexa Fans by Jonathan Porter <br><a href='https://github.com/JonoPorter' target='_blank'>Click here to see what I have written</a></div>"
+		paragraph "<div style='color:#1A77C9;text-align:center'>Alexa Fans 1.1 by Jonathan Porter <br><a href='https://github.com/JonoPorter' target='_blank'>Click here to see what I have written</a></div>"
 	}       
 }
 
