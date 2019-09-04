@@ -309,13 +309,19 @@ def alexaFanMediumLowHandler(evt) {
 }
 
 def alexaFanSwitchHandler(evt) {
-	log "${wrappedFan.displayName} switch changed"
+	//log "${wrappedFan.displayName} switch changed"
 	//def wrappedFan = getChildDevice(wrappedFan.id )
 	if(evt.value == "on"){
-		wrappedFan.on()
+      def wrapper = getVirtual(fanName);
+      def level =  wrapper.currentLevel.toInteger();
+      log "${wrappedFan.displayName} switch changed to $evt.value of $level"
+   //   wrappedFan.on()
+
+      handleLevel(level);
 	}
 	else if (evt.value == "off"){
-		wrappedFan.off()
+	      log "${wrappedFan.displayName} switch changed to $evt.value"
+	    wrappedFan.off()
 	}
 }
 def alexaFanLevelHandler(evt) {
