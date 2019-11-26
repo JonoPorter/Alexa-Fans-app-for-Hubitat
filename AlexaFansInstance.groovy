@@ -162,7 +162,7 @@ def initialize() {
 	subscribe(wrapper, "level", alexaFanLevelHandler)
 	subscribe(wrapper, "switch", alexaFanSwitchHandler)
 	subscribe(wrappedFan, "level", wrappedFanoffHandler)
-	subscribe(wrappedFan, "switch.off", wrappedFanoffHandler)
+	subscribe(wrappedFan, "switch", wrappedFanoffHandler)
 	if(wrappedFan.currentValue("switch") == "on")
     {
         wrapper.on();
@@ -263,8 +263,9 @@ def removeVirtual(String name)
 
 def wrappedFanoffHandler(evt){
 
+	def speed = wrappedFan.currentValue("speed");
 	def isOff = wrappedFan.currentValue("switch") == "off";
-	def isMedium = wrappedFan.currentValue("speed") == "medium";
+	def isMedium = speed == "medium";
 	if(isOff || !isMedium)	{
 		turnoffSpeed(mediumName())
 	}
@@ -277,6 +278,37 @@ def wrappedFanoffHandler(evt){
 		}
 		if(isOff || !isMediumHigh){
 			turnoffSpeed(mediumHighName())
+		}
+	}
+	def wrapper = getVirtual(fanName);
+	if(!isOff){
+		def newValue = 0;
+		if(speed == "low"){
+			newValue=getLowfanSpeed()
+		}
+		else if(speed == "medium-low"){
+			newValue=getMediumLowfanSpeed()
+		}
+		else if(speed == "medium"){
+			newValue=getMediumfanSpeed()
+		}
+		else if(speed == "medium-high"){
+			newValue=getMediumHighfanSpeed()
+		}
+		else if(speed == "high"){
+			newValue=getHighfanSpeed()
+		}
+		if(wrapper.currentLevel != newValue){
+			wrapper.setLevel(newValue);
+		}
+	}
+	def isWrapperOff = wrapper.currentValue("switch") == "off";
+	if(isWrapperOff!=isOff){
+		if(isOff){
+			wrapper.off();
+		}
+		else{
+			wrapper.on();
 		}
 	}
 }

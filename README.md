@@ -32,3 +32,6 @@ Note: “Set [Fan Name Here] Medium” will not work :\
 1.1:
 Added more Robust events making the medium settings change based on state instead of every time something happens.
 Made it so whent he medium setting are turned on it updates the virtual switch. 
+1.2:
+Made updates 2 way ensuring that if the physical fan controller is changed it will change the virtual. 
+This ensures alexa will not be confused with a physical fan that is off but a virtual that is on. 
